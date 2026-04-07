@@ -5,7 +5,6 @@ class StudentProfile(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='student_profile')
     contact_number = models.CharField(max_length=15, blank=True)
     enrollment_date = models.DateField(auto_now_add=True)
-    # NEW: The Batch assignment!
     batch = models.ForeignKey('academics.Batch', on_delete=models.SET_NULL, null=True, blank=True, related_name='students')
 
     def __str__(self):

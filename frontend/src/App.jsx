@@ -236,7 +236,6 @@ function App() {
           </div>
         )}
       </main>
-      
     </div>
   )
 }

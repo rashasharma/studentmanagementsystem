@@ -29,7 +29,6 @@ export default function Timetable({ token }) {
       <h2 className="dashboard-title">Class and Attendance</h2>
       <p className="dashboard-subtitle">Manage your weekly schedule and track your attendance record.</p>
 
-      {/* --- SECTION 1: THE DYNAMIC TIMETABLE --- */}
       <h3 className="section-title">Weekly Schedule</h3>
       <div style={{ display: 'grid', gap: '15px', marginBottom: '40px' }}>
         {schedule.length === 0 ? (
@@ -52,7 +51,6 @@ export default function Timetable({ token }) {
                 {cls.course_code}: {cls.course_name}
               </h3>
               
-              {/* NEW: Loop through the multiple schedules! */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {cls.schedules && cls.schedules.length > 0 ? (
                   cls.schedules.map((slot, index) => (
@@ -80,7 +78,6 @@ export default function Timetable({ token }) {
         )}
       </div>
 
-      {/* --- SECTION 2: ATTENDANCE TRACKER --- */}
       <h3 className="section-title">Attendance Record</h3>
       <div className="roster-container">
         <table className="modern-table">

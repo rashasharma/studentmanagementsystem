@@ -6,7 +6,6 @@ class CourseSerializer(serializers.ModelSerializer):
         model = Course
         fields = '__all__'
 
-# NEW: Serializer for the individual timeslots
 class SectionScheduleSerializer(serializers.ModelSerializer):
     day = serializers.CharField(source='get_day_of_week_display', read_only=True)
     start_time = serializers.TimeField(format='%I:%M %p', read_only=True)
@@ -20,8 +19,6 @@ class CourseSectionSerializer(serializers.ModelSerializer):
     course_code = serializers.CharField(source='course.code', read_only=True)
     course_name = serializers.CharField(source='course.name', read_only=True)
     batch_name = serializers.CharField(source='batch.name', read_only=True)
-    
-    # NEW: Attach the list of schedules to the section
     schedules = SectionScheduleSerializer(many=True, read_only=True)
 
     class Meta:
@@ -31,10 +28,7 @@ class CourseSectionSerializer(serializers.ModelSerializer):
 class EnrollmentSerializer(serializers.ModelSerializer):
     course_name = serializers.CharField(source='course_section.course.name', read_only=True)
     course_code = serializers.CharField(source='course_section.course.code', read_only=True)
-    
-    # NEW: Grab the nested schedules!
     schedules = SectionScheduleSerializer(source='course_section.schedules', many=True, read_only=True)
-    
     attendance_percentage = serializers.SerializerMethodField()
     course = serializers.PrimaryKeyRelatedField(queryset=Course.objects.all(), write_only=True) 
 

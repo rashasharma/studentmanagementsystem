@@ -5,14 +5,13 @@ import '../Dashboard.css';
 export default function Login({ setToken }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('STUDENT'); // Default selected role
+  const [role, setRole] = useState('STUDENT'); 
   const [error, setError] = useState('');
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
     try {
-      // 1. Get the Token
       const response = await axios.post('http://127.0.0.1:8000/api/auth/login/', {
         username,
         password
@@ -20,22 +19,26 @@ export default function Login({ setToken }) {
       
       const token = response.data.access;
       
-      // 2. Verify the role
       const meResponse = await axios.get('http://127.0.0.1:8000/api/auth/me/', {
         headers: { Authorization: `Bearer ${token}` }
       });
 
       if (meResponse.data.role !== role) {
-        setError(`Access Denied: This account is not registered as a ${role}.`);
+        setError(`Access Denied: This account is officially registered as a ${meResponse.data.role || 'UNKNOWN'}, not a ${role}.`);
         return; 
       }
 
-      // 3. If everything matches, log them in!
       localStorage.setItem('access_token', token);
       setToken(token);
 
     } catch (err) {
-      setError('Invalid username or password.');
+      if (err.response && err.response.status === 401) {
+        setError('Invalid username or password.');
+      } else if (err.code === 'ERR_NETWORK') {
+        setError('Network Error: Is your Django server (127.0.0.1:8000) running?');
+      } else {
+        setError('An unexpected server error occurred. Check the backend terminal.');
+      }
     }
   };
 
@@ -44,7 +47,7 @@ export default function Login({ setToken }) {
       <form onSubmit={handleLogin} className="modern-card" style={{ width: '100%', maxWidth: '400px', padding: '40px' }}>
         <h2 className="dashboard-title" style={{ textAlign: 'center', marginBottom: '30px' }}>EduCore Sign In</h2>
         
-        {error && <div className="status-message status-error">{error}</div>}
+        {error && <div className="status-message status-error" style={{ marginBottom: '20px' }}>{error}</div>}
 
         <div style={{ marginBottom: '20px' }}>
           <label style={{ display: 'block', color: '#888', marginBottom: '8px', fontWeight: 'bold' }}>Username</label>
