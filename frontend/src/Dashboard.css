@@ -1,0 +1,137 @@
+/* Dashboard.css - Shared styles for all inner dashboards */
+
+.dashboard-title {
+  margin-top: 0;
+  font-size: 1.8rem;
+  color: #ffffff;
+  letter-spacing: 0.5px;
+}
+
+.dashboard-subtitle {
+  color: #aaaaaa;
+  margin-bottom: 30px;
+  font-size: 1rem;
+}
+
+.section-title {
+  font-size: 1.2rem;
+  color: #dddddd;
+  margin-bottom: 15px;
+  border-bottom: 1px solid #333333;
+  padding-bottom: 10px;
+}
+
+/* Interactive Course Cards */
+.course-grid {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+  margin-bottom: 40px;
+}
+
+.course-card {
+  background: #222222;
+  border: 1px solid #333333;
+  border-radius: 10px;
+  padding: 15px 25px;
+  color: #cccccc;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  font-weight: 500;
+}
+
+.course-card:hover {
+  transform: translateY(-3px);
+  border-color: #555555;
+  background: #2a2a2a;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+.course-card.active {
+  background: rgba(255, 51, 51, 0.1);
+  border-color: #ff3333;
+  color: #ffffff;
+}
+
+/* Modern Data Tables */
+.roster-container {
+  background: #222222;
+  border-radius: 12px;
+  padding: 25px;
+  border: 1px solid #333333;
+  box-shadow: inset 0 2px 10px rgba(0,0,0,0.2);
+}
+
+.modern-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.modern-table th {
+  padding: 15px 10px;
+  color: #888888;
+  font-weight: 600;
+  font-size: 0.85rem;
+  border-bottom: 2px solid #333333;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.modern-table td {
+  padding: 15px 10px;
+  color: #eeeeee;
+  border-bottom: 1px solid #333333;
+  vertical-align: middle;
+}
+
+.modern-table tr:last-child td {
+  border-bottom: none;
+}
+
+.modern-table tr:hover td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* Custom Styled Dropdowns */
+.modern-select {
+  background: #1a1a1a;
+  color: #ffffff;
+  border: 1px solid #444444;
+  padding: 8px 15px;
+  border-radius: 6px;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  font-weight: bold;
+}
+
+.modern-select:focus {
+  border-color: #ff3333;
+}
+
+.modern-select option {
+  background: #1a1a1a;
+  color: #fff;
+}
+
+/* Status Messages */
+.status-message {
+  font-weight: 500;
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.status-success {
+  background: rgba(40, 167, 69, 0.1);
+  color: #4ade80;
+  border: 1px solid rgba(40, 167, 69, 0.2);
+}
+
+.status-error {
+  background: rgba(220, 53, 69, 0.1);
+  color: #ff6b6b;
+  border: 1px solid rgba(220, 53, 69, 0.2);
+}

@@ -1,68 +1,83 @@
 import { useState } from 'react';
 import axios from 'axios';
+import '../Dashboard.css';
 
-// We pass setToken as a prop so this component can update the main App's state
 export default function Login({ setToken }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState('STUDENT'); // Default selected role
   const [error, setError] = useState('');
 
   const handleLogin = async (e) => {
-    e.preventDefault(); // Prevents the page from refreshing when you submit the form
-    setError(''); // Clear any previous errors
-
+    e.preventDefault();
+    setError('');
     try {
-      // Make the POST request to your Django backend
-      const response = await axios.post('http://127.0.0.1:8000/api/token/', {
-        username: username,
-        password: password,
+      // 1. Get the Token
+      const response = await axios.post('http://127.0.0.1:8000/api/auth/login/', {
+        username,
+        password
+      });
+      
+      const token = response.data.access;
+      
+      // 2. Verify the role
+      const meResponse = await axios.get('http://127.0.0.1:8000/api/auth/me/', {
+        headers: { Authorization: `Bearer ${token}` }
       });
 
-      // Extract the access token from the response
-      const accessToken = response.data.access;
+      if (meResponse.data.role !== role) {
+        setError(`Access Denied: This account is not registered as a ${role}.`);
+        return; 
+      }
 
-      // Save the token in local storage (so it persists if you refresh the page)
-      localStorage.setItem('access_token', accessToken);
-
-      // Update the state in App.jsx to tell React we are officially logged in
-      setToken(accessToken);
+      // 3. If everything matches, log them in!
+      localStorage.setItem('access_token', token);
+      setToken(token);
 
     } catch (err) {
-      // If Django rejects the credentials (e.g., 401 Unauthorized), show an error message
       setError('Invalid username or password.');
-      console.error('Login failed:', err);
     }
   };
 
   return (
-    <div style={{ maxWidth: '400px', margin: '50px auto', padding: '20px', border: '1px solid #ccc', borderRadius: '8px' }}>
-      <h2>Login</h2>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      
-      <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-        <div>
-          <label style={{ display: 'block', marginBottom: '5px' }}>Username:</label>
-          <input
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-            style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
+    <div className="login-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
+      <form onSubmit={handleLogin} className="modern-card" style={{ width: '100%', maxWidth: '400px', padding: '40px' }}>
+        <h2 className="dashboard-title" style={{ textAlign: 'center', marginBottom: '30px' }}>EduCore Sign In</h2>
+        
+        {error && <div className="status-message status-error">{error}</div>}
+
+        <div style={{ marginBottom: '20px' }}>
+          <label style={{ display: 'block', color: '#888', marginBottom: '8px', fontWeight: 'bold' }}>Username</label>
+          <input 
+            type="text" 
+            className="modern-select"
+            style={{ width: '100%', padding: '12px' }}
+            value={username} 
+            onChange={(e) => setUsername(e.target.value)} 
+            required 
           />
         </div>
-        
-        <div>
-          <label style={{ display: 'block', marginBottom: '5px' }}>Password:</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
+
+        <div style={{ marginBottom: '20px' }}>
+          <label style={{ display: 'block', color: '#888', marginBottom: '8px', fontWeight: 'bold' }}>Password</label>
+          <input 
+            type="password" 
+            className="modern-select"
+            style={{ width: '100%', padding: '12px' }}
+            value={password} 
+            onChange={(e) => setPassword(e.target.value)} 
+            required 
           />
         </div>
-        
-        <button type="submit" style={{ padding: '10px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+
+        <div style={{ marginBottom: '30px', display: 'flex', justifyContent: 'space-between', color: '#aaa', fontSize: '0.9rem' }}>
+          <label><input type="radio" value="STUDENT" checked={role === 'STUDENT'} onChange={(e) => setRole(e.target.value)} /> Student</label>
+          <label><input type="radio" value="FACULTY" checked={role === 'FACULTY'} onChange={(e) => setRole(e.target.value)} /> Faculty</label>
+          <label><input type="radio" value="FINANCE" checked={role === 'FINANCE'} onChange={(e) => setRole(e.target.value)} /> Finance</label>
+          <label><input type="radio" value="ADMIN" checked={role === 'ADMIN'} onChange={(e) => setRole(e.target.value)} /> Admin</label>
+        </div>
+
+        <button type="submit" style={{ width: '100%', padding: '12px', backgroundColor: '#ff3333', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer' }}>
           Sign In
         </button>
       </form>

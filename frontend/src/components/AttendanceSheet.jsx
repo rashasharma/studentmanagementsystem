@@ -1,17 +1,19 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import '../Dashboard.css'; // Using our global dark theme
 
 export default function AttendanceSheet({ token }) {
   const [courses, setCourses] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState('');
   
-  // Default the date picker to today!
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  // Default to today's date in YYYY-MM-DD format
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   
-  const [attendanceRecords, setAttendanceRecords] = useState([]);
+  const [attendanceData, setAttendanceData] = useState([]);
   const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  // 1. Fetch the Professor's courses when the page loads
+  // 1. Fetch the professor's assigned courses on load
   useEffect(() => {
     const fetchCourses = async () => {
       try {
@@ -20,127 +22,166 @@ export default function AttendanceSheet({ token }) {
         });
         setCourses(response.data);
       } catch (err) {
-        console.error("Failed to fetch courses", err);
+        console.error("Failed to fetch faculty courses", err);
       }
     };
     fetchCourses();
   }, [token]);
 
-  // 2. Fetch the attendance sheet whenever the course OR the date changes
+  // 2. Fetch the specific attendance sheet when a course or date is selected
   useEffect(() => {
-    if (selectedCourse && selectedDate) {
+    if (selectedCourse && date) {
       const fetchAttendance = async () => {
-        setMessage(''); // Clear old messages
+        setLoading(true);
+        setMessage('');
         try {
-          const response = await axios.get(`http://127.0.0.1:8000/api/academics/faculty/courses/${selectedCourse}/attendance/${selectedDate}/`, {
+          const response = await axios.get(`http://127.0.0.1:8000/api/academics/faculty/courses/${selectedCourse}/attendance/${date}/`, {
             headers: { Authorization: `Bearer ${token}` }
           });
-          setAttendanceRecords(response.data);
+          setAttendanceData(response.data);
+          setLoading(false);
         } catch (err) {
           console.error("Failed to fetch attendance sheet", err);
-          setMessage("❌ Failed to load roster.");
+          setAttendanceData([]);
+          setLoading(false);
         }
       };
       fetchAttendance();
     }
-  }, [selectedCourse, selectedDate, token]);
+  }, [selectedCourse, date, token]);
 
-  // 3. Handle checking/unchecking the present box
-  const toggleAttendance = (recordId) => {
-    setAttendanceRecords(records => 
-      records.map(record => 
+  // 3. Handle toggling the Present/Absent switch locally
+  const handleToggle = (recordId) => {
+    setAttendanceData(prevData => 
+      prevData.map(record => 
         record.id === recordId ? { ...record, is_present: !record.is_present } : record
       )
     );
   };
 
-  // 4. Submit the whole sheet back to Django
-  const saveAttendance = async () => {
+  // 4. Send the bulk update to the Django backend
+  const handleSave = async () => {
+    setMessage('');
     try {
-      await axios.put(`http://127.0.0.1:8000/api/academics/faculty/courses/${selectedCourse}/attendance/${selectedDate}/`, 
-        attendanceRecords, // Send the whole array of data!
+      await axios.put(`http://127.0.0.1:8000/api/academics/faculty/courses/${selectedCourse}/attendance/${date}/`, 
+        attendanceData, // Sending the whole array of records
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setMessage('✅ Attendance saved successfully!');
     } catch (err) {
       setMessage('❌ Failed to save attendance.');
+      console.error(err);
     }
   };
 
   return (
-    <div style={{ maxWidth: '800px', margin: '20px auto', padding: '20px' }}>
-      <h2>Daily Attendance</h2>
-      
-      {/* Controls: Course Dropdown and Date Picker */}
-      <div style={{ display: 'flex', gap: '20px', marginBottom: '30px', padding: '15px', backgroundColor: '#f4f4f4', borderRadius: '8px' }}>
-        <div>
-          <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '5px' }}>Select Course:</label>
+    <div>
+      <h2 className="dashboard-title">Daily Attendance Sheet</h2>
+      <p className="dashboard-subtitle">Select a course and date to record attendance.</p>
+
+      {/* Controls Container */}
+      <div className="roster-container" style={{ display: 'flex', gap: '20px', marginBottom: '20px', alignItems: 'flex-end' }}>
+        
+        <div style={{ flex: 1 }}>
+          <label style={{ display: 'block', color: '#888', marginBottom: '8px', fontWeight: 'bold' }}>Select Course:</label>
           <select 
+            className="modern-select" 
+            style={{ width: '100%' }}
             value={selectedCourse} 
             onChange={(e) => setSelectedCourse(e.target.value)}
-            style={{ padding: '8px', width: '250px' }}
           >
-            <option value="" disabled>-- Choose a Course --</option>
-            {courses.map(course => (
-              <option key={course.id} value={course.id}>{course.code}: {course.name}</option>
+            <option value="" disabled>-- Choose a course --</option>
+            {courses.map(c => (
+              <option key={c.id} value={c.id}>{c.code}: {c.name}</option>
             ))}
           </select>
         </div>
 
         <div>
-          <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '5px' }}>Date:</label>
+          <label style={{ display: 'block', color: '#888', marginBottom: '8px', fontWeight: 'bold' }}>Select Date:</label>
+          {/* Using a modern styled date input */}
           <input 
             type="date" 
-            value={selectedDate} 
-            onChange={(e) => setSelectedDate(e.target.value)}
-            style={{ padding: '8px' }}
+            className="modern-select"
+            value={date} 
+            onChange={(e) => setDate(e.target.value)}
           />
         </div>
+
       </div>
 
-      {/* The Attendance Sheet */}
-      {selectedCourse && (
-        <div style={{ padding: '20px', border: '1px solid #ccc', borderRadius: '8px' }}>
+      {/* The Roster & Grading Area */}
+      {selectedCourse ? (
+        <div className="roster-container">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-            <h3 style={{ margin: 0 }}>Class Roster</h3>
-            {message && <span style={{ fontWeight: 'bold', color: message.includes('✅') ? '#28a745' : '#dc3545' }}>{message}</span>}
-          </div>
-          
-          <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse', marginBottom: '20px' }}>
-            <thead>
-              <tr style={{ borderBottom: '2px solid #eee' }}>
-                <th style={{ padding: '10px' }}>Student Name</th>
-                <th style={{ padding: '10px', textAlign: 'center' }}>Present?</th>
-              </tr>
-            </thead>
-            <tbody>
-              {attendanceRecords.map(record => (
-                <tr key={record.id} style={{ borderBottom: '1px solid #eee', backgroundColor: record.is_present ? 'transparent' : '#fff3cd' }}>
-                  <td style={{ padding: '10px' }}>{record.student_name}</td>
-                  <td style={{ padding: '10px', textAlign: 'center' }}>
-                    <input 
-                      type="checkbox" 
-                      checked={record.is_present}
-                      onChange={() => toggleAttendance(record.id)}
-                      style={{ transform: 'scale(1.5)', cursor: 'pointer' }}
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          {attendanceRecords.length === 0 ? (
-            <p style={{ color: '#666' }}>No students enrolled in this course.</p>
-          ) : (
+            <h3 className="section-title" style={{ border: 'none', margin: 0 }}>Class Roster</h3>
             <button 
-              onClick={saveAttendance}
-              style={{ padding: '10px 20px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', width: '100%' }}
+              onClick={handleSave}
+              style={{
+                padding: '10px 20px',
+                backgroundColor: '#ff3333',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                transition: 'transform 0.2s'
+              }}
+              onMouseEnter={(e) => e.target.style.transform = 'translateY(-2px)'}
+              onMouseLeave={(e) => e.target.style.transform = 'translateY(0px)'}
             >
               Save Attendance
             </button>
+          </div>
+
+          {message && (
+            <div className={`status-message ${message.includes('✅') ? 'status-success' : 'status-error'}`}>
+              {message}
+            </div>
+          )}
+
+          {loading ? (
+            <p style={{ color: '#aaa', textAlign: 'center' }}>Loading roster...</p>
+          ) : (
+            <table className="modern-table">
+              <thead>
+                <tr>
+                  <th>Student Username</th>
+                  <th style={{ textAlign: 'right' }}>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {attendanceData.map(record => (
+                  <tr key={record.id}>
+                    <td style={{ fontWeight: 'bold', color: '#fff' }}>{record.student_name}</td>
+                    <td style={{ textAlign: 'right' }}>
+                      <button 
+                        onClick={() => handleToggle(record.id)}
+                        style={{
+                          padding: '8px 16px',
+                          border: `1px solid ${record.is_present ? '#4ade80' : '#ff6b6b'}`,
+                          backgroundColor: record.is_present ? 'rgba(74, 222, 128, 0.1)' : 'rgba(255, 107, 107, 0.1)',
+                          color: record.is_present ? '#4ade80' : '#ff6b6b',
+                          borderRadius: '20px',
+                          cursor: 'pointer',
+                          fontWeight: 'bold',
+                          width: '100px'
+                        }}
+                      >
+                        {record.is_present ? 'Present' : 'Absent'}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+          {!loading && attendanceData.length === 0 && (
+            <p style={{ textAlign: 'center', color: '#888', padding: '20px' }}>No students enrolled in this course.</p>
           )}
         </div>
+      ) : (
+        <p style={{ color: '#888', textAlign: 'center' }}>Please select a course to view the attendance sheet.</p>
       )}
     </div>
   );

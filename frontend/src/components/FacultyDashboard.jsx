@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import '../Dashboard.css'; // Import our new shared styles!
 
 export default function FacultyDashboard({ token }) {
   const [courses, setCourses] = useState([]);
@@ -7,7 +8,6 @@ export default function FacultyDashboard({ token }) {
   const [roster, setRoster] = useState([]);
   const [message, setMessage] = useState('');
 
-  // 1. Fetch the Professor's assigned courses on load
   useEffect(() => {
     const fetchCourses = async () => {
       try {
@@ -22,7 +22,6 @@ export default function FacultyDashboard({ token }) {
     fetchCourses();
   }, [token]);
 
-  // 2. Fetch the roster when a specific course is clicked
   const viewRoster = async (courseId) => {
     setMessage('');
     try {
@@ -36,7 +35,6 @@ export default function FacultyDashboard({ token }) {
     }
   };
 
-  // 3. Update a student's grade
   const handleGradeUpdate = async (enrollmentId, newGrade) => {
     try {
       await axios.patch(`http://127.0.0.1:8000/api/academics/faculty/enrollment/${enrollmentId}/grade/`, 
@@ -44,59 +42,71 @@ export default function FacultyDashboard({ token }) {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setMessage('✅ Grade updated successfully!');
-      viewRoster(selectedCourse); // Refresh the roster to show the new grade
+      viewRoster(selectedCourse); 
     } catch (err) {
       setMessage('❌ Failed to update grade.');
     }
   };
 
   return (
-    <div style={{ maxWidth: '800px', margin: '20px auto', padding: '20px' }}>
-      <h2>Faculty Dashboard</h2>
+    <div>
+      <h2 className="dashboard-title">Faculty Dashboard</h2>
+      <p className="dashboard-subtitle">Manage your assigned courses and student grades.</p>
       
       {/* Course List Section */}
-      <div style={{ marginBottom: '30px' }}>
-        <h3>My Assigned Courses</h3>
-        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+      <div>
+        <h3 className="section-title">My Assigned Courses</h3>
+        <div className="course-grid">
           {courses.map(course => (
-            <button 
+            <div 
               key={course.id} 
               onClick={() => viewRoster(course.id)}
-              style={{ padding: '10px', backgroundColor: selectedCourse === course.id ? '#0056b3' : '#007bff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+              className={`course-card ${selectedCourse === course.id ? 'active' : ''}`}
             >
               {course.code}: {course.name}
-            </button>
+            </div>
           ))}
+          {courses.length === 0 && <p style={{color: '#888'}}>You have no courses assigned to you.</p>}
         </div>
-        {courses.length === 0 && <p>You have no courses assigned to you.</p>}
       </div>
 
       {/* Roster & Grading Section */}
       {selectedCourse && (
-        <div style={{ padding: '20px', border: '1px solid #ccc', borderRadius: '8px' }}>
-          <h3>Class Roster</h3>
-          {message && <p style={{ color: message.includes('✅') ? '#28a745' : '#dc3545', fontWeight: 'bold' }}>{message}</p>}
+        <div className="roster-container">
+          <h3 className="section-title" style={{ border: 'none', marginBottom: '5px' }}>Class Roster</h3>
           
-          <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
+          {message && (
+            <div className={`status-message ${message.includes('✅') ? 'status-success' : 'status-error'}`}>
+              {message}
+            </div>
+          )}
+          
+          <table className="modern-table">
             <thead>
-              <tr style={{ borderBottom: '2px solid #eee' }}>
-                <th style={{ padding: '10px' }}>Student Name</th>
-                <th style={{ padding: '10px' }}>Course</th>
-                <th style={{ padding: '10px' }}>Current Grade</th>
-                <th style={{ padding: '10px' }}>Assign Grade</th>
+              <tr>
+                <th>Student Name</th>
+                <th>Course</th>
+                <th>Current Grade</th>
+                <th>Assign Grade</th>
               </tr>
             </thead>
             <tbody>
               {roster.map(enrollment => (
-                <tr key={enrollment.id} style={{ borderBottom: '1px solid #eee' }}>
-                  <td style={{ padding: '10px' }}>{enrollment.student_name}</td>
-                  <td style={{ padding: '10px' }}>{enrollment.course_name}</td>
-                  <td style={{ padding: '10px', fontWeight: 'bold' }}>{enrollment.grade || 'Not Graded'}</td>
-                  <td style={{ padding: '10px' }}>
+                <tr key={enrollment.id}>
+                  <td style={{ fontWeight: '500' }}>{enrollment.student_name}</td>
+                  <td style={{ color: '#aaa' }}>{enrollment.course_name}</td>
+                  <td style={{ 
+                    fontWeight: 'bold', 
+                    fontSize: '1.1rem',
+                    color: enrollment.grade ? '#4ade80' : '#888' 
+                  }}>
+                    {enrollment.grade || '—'}
+                  </td>
+                  <td>
                     <select 
+                      className="modern-select"
                       onChange={(e) => handleGradeUpdate(enrollment.id, e.target.value)}
-                      defaultValue={enrollment.grade || ""}
-                      style={{ padding: '5px' }}
+                      value={enrollment.grade || ""}
                     >
                       <option value="" disabled>Select</option>
                       <option value="A">A</option>
@@ -110,7 +120,7 @@ export default function FacultyDashboard({ token }) {
               ))}
             </tbody>
           </table>
-          {roster.length === 0 && <p>No students enrolled in this course yet.</p>}
+          {roster.length === 0 && <p style={{ color: '#888', textAlign: 'center', padding: '20px' }}>No students enrolled in this course yet.</p>}
         </div>
       )}
     </div>

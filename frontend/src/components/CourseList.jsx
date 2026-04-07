@@ -1,72 +1,142 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import '../Dashboard.css';
 
 export default function CourseList({ token }) {
-  const [courses, setCourses] = useState([]);
+  const [allCourses, setAllCourses] = useState([]);
+  const [myEnrollments, setMyEnrollments] = useState([]);
   const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+  
+  // NEW: Pagination State
+  const [nextPage, setNextPage] = useState(null);
+  const [prevPage, setPrevPage] = useState(null);
 
+  // We wrap the fetch in a reusable function so we can pass it different page URLs
+  const fetchCourses = async (url = 'http://127.0.0.1:8000/api/academics/courses/') => {
+    try {
+      const coursesRes = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      // Because Django is paginating, the actual courses are inside the `.results` array!
+      setAllCourses(coursesRes.data.results);
+      setNextPage(coursesRes.data.next);
+      setPrevPage(coursesRes.data.previous);
+
+      // Fetch the student's enrollments to hide the "Enroll" button if they are already in it
+      const enrollRes = await axios.get('http://127.0.0.1:8000/api/academics/enroll/', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setMyEnrollments(enrollRes.data.map(enrollment => enrollment.course)); 
+    } catch (err) {
+      console.error("Failed to fetch courses", err);
+    }
+  };
+
+  // Initial load
   useEffect(() => {
-    // Fetch all available courses when the page loads
-    const fetchCourses = async () => {
-      try {
-        const response = await axios.get('http://127.0.0.1:8000/api/academics/courses/', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setCourses(response.data);
-      } catch (err) {
-        console.error("Failed to fetch courses", err);
-      }
-    };
-
     fetchCourses();
   }, [token]);
 
   const handleEnroll = async (courseId) => {
-    setMessage(''); // Clear previous messages
+    setMessage('');
+    setError('');
     try {
       await axios.post('http://127.0.0.1:8000/api/academics/enroll/', 
-        { course: courseId }, // Send the ID of the course we want to join
+        { course: courseId },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setMessage('✅ Successfully enrolled in course!');
+      setMyEnrollments([...myEnrollments, courseId]); 
     } catch (err) {
-      // If Django blocks it (e.g., already enrolled), show the error
-      if (err.response && err.response.data) {
-        // DRF usually returns validation errors as arrays
-        const errorMsg = err.response.data[0] || 'Failed to enroll.';
-        setMessage(`❌ ${errorMsg}`);
-      }
+      setError('❌ Failed to enroll. You may already be registered for this class.');
     }
   };
 
   return (
-    <div style={{ maxWidth: '800px', margin: '20px auto', padding: '20px' }}>
-      <h2>Available Courses</h2>
-      
-      {/* Display Success or Error Messages */}
-      {message && (
-        <div style={{ padding: '10px', marginBottom: '20px', borderRadius: '5px', backgroundColor: '#e9ecef' }}>
-          <strong>{message}</strong>
-        </div>
-      )}
+    <div>
+      <h2 className="dashboard-title">Course Registration</h2>
+      <p className="dashboard-subtitle">Browse available classes and add them to your schedule.</p>
 
-      <div style={{ display: 'grid', gap: '15px' }}>
-        {courses.map(course => (
-          <div key={course.id} style={{ padding: '15px', border: '1px solid #ccc', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <h3 style={{ margin: '0 0 5px 0' }}>{course.code}: {course.name}</h3>
-              <p style={{ margin: '0 0 5px 0', color: '#666' }}>{course.description || 'No description provided.'}</p>
-              <small>Credits: {course.credits}</small>
-            </div>
-            
-            <button 
-              onClick={() => handleEnroll(course.id)}
-              style={{ padding: '10px 20px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-            >
-              Enroll
-            </button>
-          </div>
-        ))}
+      {message && <div className="status-message status-success">{message}</div>}
+      {error && <div className="status-message status-error">{error}</div>}
+
+      <div className="roster-container">
+        <h3 className="section-title" style={{ border: 'none', marginBottom: '5px' }}>Available Courses</h3>
+        
+        <table className="modern-table">
+          <thead>
+            <tr>
+              <th>Course</th>
+              <th>Description</th>
+              <th>Credits</th>
+              <th>Schedule</th>
+              <th style={{ textAlign: 'center' }}>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {allCourses.map((course) => {
+              const isEnrolled = myEnrollments.includes(course.id);
+              
+              return (
+                <tr key={course.id}>
+                  <td>
+                    <div style={{ fontWeight: 'bold', color: '#ffffff', fontSize: '1.1rem' }}>{course.code}</div>
+                    <div style={{ color: '#aaaaaa', fontSize: '0.9rem' }}>{course.name}</div>
+                  </td>
+                  <td style={{ color: '#888888', maxWidth: '250px' }}>{course.description || 'No description provided.'}</td>
+                  <td style={{ color: '#cccccc', fontWeight: 'bold' }}>{course.credits}</td>
+                  <td style={{ color: '#aaaaaa', fontSize: '0.9rem' }}>
+                     {course.days_of_week ? `${course.days_of_week}` : 'TBA'} <br/>
+                     {course.start_time ? `${course.start_time}` : ''}
+                  </td>
+                  <td style={{ textAlign: 'center' }}>
+                    {isEnrolled ? (
+                      <span style={{ color: '#4ade80', fontWeight: 'bold', backgroundColor: 'rgba(74, 222, 128, 0.1)', padding: '8px 15px', borderRadius: '20px' }}>
+                        ✓ Enrolled
+                      </span>
+                    ) : (
+                      <button 
+                        onClick={() => handleEnroll(course.id)}
+                        style={{ padding: '8px 20px', backgroundColor: '#ff3333', color: 'white', border: 'none', borderRadius: '20px', cursor: 'pointer', fontWeight: 'bold' }}
+                      >
+                        Enroll +
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+
+        {/* NEW: Pagination Controls */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px', paddingTop: '15px', borderTop: '1px solid #333' }}>
+          <button 
+            onClick={() => fetchCourses(prevPage)} 
+            disabled={!prevPage}
+            style={{ padding: '8px 16px', background: prevPage ? '#333' : '#1a1a1a', color: prevPage ? '#fff' : '#555', border: 'none', borderRadius: '5px', cursor: prevPage ? 'pointer' : 'not-allowed' }}
+          >
+            ← Previous
+          </button>
+          
+          <span style={{ color: '#888', fontSize: '0.9rem' }}>Catalog Pages</span>
+
+          <button 
+            onClick={() => fetchCourses(nextPage)} 
+            disabled={!nextPage}
+            style={{ padding: '8px 16px', background: nextPage ? '#333' : '#1a1a1a', color: nextPage ? '#fff' : '#555', border: 'none', borderRadius: '5px', cursor: nextPage ? 'pointer' : 'not-allowed' }}
+          >
+            Next →
+          </button>
+        </div>
+        
+        {allCourses.length === 0 && (
+          <p style={{ padding: '20px', textAlign: 'center', color: '#888' }}>
+            No courses are currently available for registration.
+          </p>
+        )}
       </div>
     </div>
   );

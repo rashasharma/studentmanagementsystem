@@ -1,0 +1,161 @@
+/* Login.css */
+.login-page-wrapper {
+  background: radial-gradient(circle at top left, #3a0a0a, #121212 50%);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  color: white;
+  margin: -20px; /* Counteracts standard App padding if present */
+  padding: 20px;
+}
+
+.login-header-title {
+  margin-bottom: 30px;
+  font-size: 2rem;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+.login-card {
+  background-color: #1a1a1a;
+  border-radius: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  max-width: 900px;
+  width: 100%;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+/* Left Side: Text and Illustration */
+.login-left {
+  flex: 1;
+  min-width: 300px;
+  padding: 50px;
+  background: linear-gradient(135deg, #222 0%, #1a1a1a 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.login-left h1 {
+  font-size: 2.2rem;
+  line-height: 1.3;
+  margin-bottom: 20px;
+  background: -webkit-linear-gradient(#fff, #aaa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.illustration-placeholder {
+  margin-top: 30px;
+  font-size: 5rem;
+  text-align: center;
+  opacity: 0.8;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+/* Right Side: The Form */
+.login-right {
+  flex: 1;
+  min-width: 300px;
+  padding: 50px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.role-selector {
+  margin-bottom: 30px;
+}
+
+.role-selector h3 {
+  font-size: 1.1rem;
+  margin-bottom: 15px;
+  color: #ddd;
+}
+
+.radio-group {
+  display: flex;
+  gap: 15px;
+}
+
+.radio-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #aaa;
+}
+
+.radio-label input[type="radio"] {
+  accent-color: #ff3333;
+  transform: scale(1.2);
+}
+
+.input-group {
+  margin-bottom: 20px;
+}
+
+.modern-input {
+  width: 100%;
+  padding: 15px 20px;
+  background-color: rgba(255, 51, 51, 0.05);
+  border: 1px solid rgba(255, 51, 51, 0.3);
+  border-radius: 8px;
+  color: white;
+  font-size: 1rem;
+  outline: none;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+
+.modern-input::placeholder {
+  color: #ff3333;
+  opacity: 0.6;
+}
+
+.modern-input:focus {
+  border-color: #ff3333;
+  background-color: rgba(255, 51, 51, 0.1);
+  box-shadow: 0 0 10px rgba(255, 51, 51, 0.2);
+}
+
+.sign-in-btn {
+  width: 100%;
+  padding: 15px;
+  background: linear-gradient(90deg, #ff3333, #d90000);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  margin-top: 10px;
+}
+
+.sign-in-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(255, 51, 51, 0.4);
+}
+
+.error-message {
+  color: #ff4d4d;
+  background-color: rgba(255, 77, 77, 0.1);
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 20px;
+  text-align: center;
+  border: 1px solid rgba(255, 77, 77, 0.3);
+}
