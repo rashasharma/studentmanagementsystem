@@ -1,10 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import axios from 'axios';
 import '../Dashboard.css';
 
 export default function Timetable({ token }) {
   const [schedule, setSchedule] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // NEW: State to track which course's details are currently open
+  const [expandedCourseId, setExpandedCourseId] = useState(null);
 
   useEffect(() => {
     const fetchSchedule = async () => {
@@ -21,6 +24,11 @@ export default function Timetable({ token }) {
     };
     fetchSchedule();
   }, [token]);
+
+  // NEW: Function to open/close the daily records
+  const toggleDetails = (id) => {
+    setExpandedCourseId(expandedCourseId === id ? null : id);
+  };
 
   if (loading) return <div style={{ padding: '20px', color: '#aaaaaa' }}>Loading your class data...</div>;
 
@@ -100,13 +108,55 @@ export default function Timetable({ token }) {
               }
 
               return (
-                <tr key={`attendance-${cls.id}`}>
-                  <td style={{ fontWeight: 'bold', color: '#ffffff' }}>{cls.course_code}</td>
-                  <td style={{ color: '#aaaaaa' }}>{cls.course_name}</td>
-                  <td style={{ textAlign: 'right', fontWeight: 'bold', fontSize: '1.2rem', color: percentColor }}>
-                    {cls.attendance_percentage}
-                  </td>
-                </tr>
+                <Fragment key={`attendance-${cls.id}`}>
+                  {/* Made the row clickable to trigger the dropdown */}
+                  <tr 
+                    style={{ cursor: 'pointer', backgroundColor: expandedCourseId === cls.id ? '#1f1f1f' : 'transparent' }} 
+                    onClick={() => toggleDetails(cls.id)}
+                  >
+                    <td style={{ fontWeight: 'bold', color: '#ffffff' }}>
+                      {cls.course_code}
+                      {/* Visual indicator that it can be clicked */}
+                      <span style={{ fontSize: '0.8rem', color: '#888', marginLeft: '10px', fontWeight: 'normal' }}>
+                        {expandedCourseId === cls.id ? '▼ Hide Logs' : '▶ View Logs'}
+                      </span>
+                    </td>
+                    <td style={{ color: '#aaaaaa' }}>{cls.course_name}</td>
+                    <td style={{ textAlign: 'right', fontWeight: 'bold', fontSize: '1.2rem', color: percentColor }}>
+                      {cls.attendance_percentage}
+                    </td>
+                  </tr>
+                  
+                  {/* --- NEW: The Hidden Detailed Record View --- */}
+                  {expandedCourseId === cls.id && (
+                    <tr>
+                      <td colSpan="3" style={{ backgroundColor: '#1a1a1a', padding: '20px', borderBottom: '1px solid #333' }}>
+                        <h4 style={{ margin: '0 0 15px 0', color: '#ccc', fontSize: '1rem' }}>Daily Logs:</h4>
+                        {cls.attendance_details && cls.attendance_details.length > 0 ? (
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '10px' }}>
+                            {cls.attendance_details.map((record, idx) => (
+                              <div key={idx} style={{
+                                padding: '10px',
+                                borderRadius: '6px',
+                                border: `1px solid ${record.is_present ? '#4ade80' : '#ff6b6b'}`,
+                                backgroundColor: record.is_present ? 'rgba(74, 222, 128, 0.05)' : 'rgba(255, 107, 107, 0.05)',
+                                textAlign: 'center',
+                                fontSize: '0.9rem'
+                              }}>
+                                <div style={{ color: '#eee', marginBottom: '5px' }}>{record.date}</div>
+                                <div style={{ color: record.is_present ? '#4ade80' : '#ff6b6b', fontWeight: 'bold' }}>
+                                  {record.is_present ? 'Present' : 'Absent'}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p style={{ color: '#888', margin: 0, fontStyle: 'italic' }}>No daily attendance records have been posted yet.</p>
+                        )}
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
               )
             })}
           </tbody>

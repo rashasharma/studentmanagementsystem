@@ -1,19 +1,16 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import '../Dashboard.css'; // Using our global dark theme
+import '../Dashboard.css';
 
 export default function AttendanceSheet({ token }) {
   const [courses, setCourses] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState('');
-  
-  // Default to today's date in YYYY-MM-DD format
+  const [activeCourseDetails, setActiveCourseDetails] = useState(null);
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  
   const [attendanceData, setAttendanceData] = useState([]);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // 1. Fetch the professor's assigned courses on load
   useEffect(() => {
     const fetchCourses = async () => {
       try {
@@ -28,7 +25,15 @@ export default function AttendanceSheet({ token }) {
     fetchCourses();
   }, [token]);
 
-  // 2. Fetch the specific attendance sheet when a course or date is selected
+  useEffect(() => {
+    if (selectedCourse) {
+      const details = courses.find(c => c.id === parseInt(selectedCourse));
+      setActiveCourseDetails(details);
+    } else {
+      setActiveCourseDetails(null);
+    }
+  }, [selectedCourse, courses]);
+
   useEffect(() => {
     if (selectedCourse && date) {
       const fetchAttendance = async () => {
@@ -50,7 +55,6 @@ export default function AttendanceSheet({ token }) {
     }
   }, [selectedCourse, date, token]);
 
-  // 3. Handle toggling the Present/Absent switch locally
   const handleToggle = (recordId) => {
     setAttendanceData(prevData => 
       prevData.map(record => 
@@ -59,12 +63,11 @@ export default function AttendanceSheet({ token }) {
     );
   };
 
-  // 4. Send the bulk update to the Django backend
   const handleSave = async () => {
     setMessage('');
     try {
       await axios.put(`http://127.0.0.1:8000/api/academics/faculty/courses/${selectedCourse}/attendance/${date}/`, 
-        attendanceData, // Sending the whole array of records
+        attendanceData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setMessage('✅ Attendance saved successfully!');
@@ -79,9 +82,7 @@ export default function AttendanceSheet({ token }) {
       <h2 className="dashboard-title">Daily Attendance Sheet</h2>
       <p className="dashboard-subtitle">Select a course and date to record attendance.</p>
 
-      {/* Controls Container */}
       <div className="roster-container" style={{ display: 'flex', gap: '20px', marginBottom: '20px', alignItems: 'flex-end' }}>
-        
         <div style={{ flex: 1 }}>
           <label style={{ display: 'block', color: '#888', marginBottom: '8px', fontWeight: 'bold' }}>Select Course:</label>
           <select 
@@ -92,14 +93,13 @@ export default function AttendanceSheet({ token }) {
           >
             <option value="" disabled>-- Choose a course --</option>
             {courses.map(c => (
-              <option key={c.id} value={c.id}>{c.code}: {c.name}</option>
+              <option key={c.id} value={c.id}>{c.course_code}: {c.course_name}</option>
             ))}
           </select>
         </div>
 
         <div>
           <label style={{ display: 'block', color: '#888', marginBottom: '8px', fontWeight: 'bold' }}>Select Date:</label>
-          {/* Using a modern styled date input */}
           <input 
             type="date" 
             className="modern-select"
@@ -107,14 +107,36 @@ export default function AttendanceSheet({ token }) {
             onChange={(e) => setDate(e.target.value)}
           />
         </div>
-
       </div>
 
-      {/* The Roster & Grading Area */}
+      {activeCourseDetails && (
+        <div style={{ backgroundColor: '#1a1a1a', padding: '15px 20px', borderRadius: '8px', marginBottom: '20px', borderLeft: '4px solid #4ade80' }}>
+          <h4 style={{ margin: '0 0 10px 0', color: '#fff' }}>Class Details</h4>
+          <p style={{ margin: '0 0 5px 0', color: '#aaa', fontSize: '0.9rem' }}>
+            <strong style={{ color: '#ccc' }}>Batches:</strong>{' '}
+            {activeCourseDetails.batches && activeCourseDetails.batches.length > 0 
+              ? activeCourseDetails.batches.map(b => b.name).join(', ') 
+              : (activeCourseDetails.batch_names || 'None Assigned')}
+          </p>
+          <div style={{ color: '#aaa', fontSize: '0.9rem' }}>
+            <strong style={{ color: '#ccc' }}>Official Meeting Times:</strong>
+            <ul style={{ margin: '5px 0 0 0', paddingLeft: '20px' }}>
+              {activeCourseDetails.schedules && activeCourseDetails.schedules.length > 0 ? (
+                activeCourseDetails.schedules.map((slot, i) => (
+                  <li key={i}>{slot.day} from {slot.start_time} to {slot.end_time} (Room {slot.room_number})</li>
+                ))
+              ) : (
+                <li>No schedule set for this course.</li>
+              )}
+            </ul>
+          </div>
+        </div>
+      )}
+
       {selectedCourse ? (
         <div className="roster-container">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-            <h3 className="section-title" style={{ border: 'none', margin: 0 }}>Class Roster</h3>
+            <h3 className="section-title" style={{ border: 'none', margin: 0 }}>Attendance Roster</h3>
             <button 
               onClick={handleSave}
               style={{

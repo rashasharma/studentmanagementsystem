@@ -14,3 +14,9 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return f"{self.username} - {self.role}"
+
+    def save(self, *args, **kwargs):
+        # Convert empty strings to actual NULL values to prevent IntegrityErrors
+        if self.email == "":
+            self.email = None
+        super().save(*args, **kwargs)

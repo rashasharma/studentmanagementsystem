@@ -18,23 +18,31 @@ class SectionScheduleSerializer(serializers.ModelSerializer):
 class CourseSectionSerializer(serializers.ModelSerializer):
     course_code = serializers.CharField(source='course.code', read_only=True)
     course_name = serializers.CharField(source='course.name', read_only=True)
-    batch_name = serializers.CharField(source='batch.name', read_only=True)
+    batch_names = serializers.SerializerMethodField()
     schedules = SectionScheduleSerializer(many=True, read_only=True)
 
     class Meta:
         model = CourseSection
-        fields = ['id', 'course_code', 'course_name', 'batch_name', 'schedules']
+        fields = ['id', 'course_code', 'course_name', 'batch_names', 'schedules']
+
+    def get_batch_names(self, obj):
+        return ", ".join([b.name for b in obj.batches.all()])
 
 class EnrollmentSerializer(serializers.ModelSerializer):
     course_name = serializers.CharField(source='course_section.course.name', read_only=True)
     course_code = serializers.CharField(source='course_section.course.code', read_only=True)
     schedules = SectionScheduleSerializer(source='course_section.schedules', many=True, read_only=True)
     attendance_percentage = serializers.SerializerMethodField()
+    
+    # --- NEW: Field to grab detailed daily records ---
+    attendance_details = serializers.SerializerMethodField()
+    
     course = serializers.PrimaryKeyRelatedField(queryset=Course.objects.all(), write_only=True) 
 
     class Meta:
         model = Enrollment
-        fields = ['id', 'course', 'course_name', 'course_code', 'enrollment_date', 'grade', 'schedules', 'attendance_percentage']
+        # Added attendance_details to the fields list
+        fields = ['id', 'course', 'course_name', 'course_code', 'enrollment_date', 'grade', 'schedules', 'attendance_percentage', 'attendance_details']
         read_only_fields = ['grade']
 
     def get_attendance_percentage(self, obj):
@@ -44,6 +52,11 @@ class EnrollmentSerializer(serializers.ModelSerializer):
         classes_attended = obj.attendance_records.filter(is_present=True).count()
         percentage = (classes_attended / total_classes) * 100
         return f"{round(percentage)}%"
+
+    # --- NEW: Method to extract and sort the dates ---
+    def get_attendance_details(self, obj):
+        records = obj.attendance_records.all().order_by('-date')
+        return [{"date": record.date, "is_present": record.is_present} for record in records]
 
 class FacultyGradeSerializer(serializers.ModelSerializer):
     student_name = serializers.CharField(source='student.user.username', read_only=True)

@@ -32,7 +32,7 @@ class Course(models.Model):
 
 class CourseSection(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='sections')
-    batch = models.ForeignKey(Batch, on_delete=models.CASCADE, related_name='timetable')
+    batches = models.ManyToManyField(Batch, related_name='course_sections')
     instructor = models.ForeignKey(
         settings.AUTH_USER_MODEL, 
         on_delete=models.SET_NULL, 
@@ -41,7 +41,7 @@ class CourseSection(models.Model):
     )
 
     def __str__(self):
-        return f"{self.course.code} for {self.batch.name}"
+        return f"{self.course.code} - {self.instructor.username if self.instructor else 'TBA'}"
 
 class SectionSchedule(models.Model):
     DAY_CHOICES = [
@@ -60,26 +60,73 @@ class SectionSchedule(models.Model):
 
     def clean(self):
         super().clean()
+        
+        # Guard against partial data during initial form validation
+        if not self.start_time or not self.end_time or not self.day_of_week:
+            return
+
+        if self.start_time >= self.end_time:
+            raise ValidationError({'end_time': "Class end time must be strictly after the start time."})
+
+        # Sanitize the room number to prevent "101 " vs "101" bypasses
+        current_room = self.room_number.strip().upper() if self.room_number else ""
+        
+        # Find exact overlapping timeframes
         overlapping_schedules = SectionSchedule.objects.filter(
             day_of_week=self.day_of_week,
             start_time__lt=self.end_time,
             end_time__gt=self.start_time
-        ).exclude(pk=self.pk)
+        )
+        
+        # Safely exclude ourselves if we are updating an existing record
+        if self.pk:
+            overlapping_schedules = overlapping_schedules.exclude(pk=self.pk)
 
         for schedule in overlapping_schedules:
-            if self.room_number == schedule.room_number:
-                raise ValidationError(f"VENUE CLASH: Room {self.room_number} is booked on {self.get_day_of_week_display()} at this time.")
-            if self.course_section.instructor == schedule.course_section.instructor:
-                raise ValidationError(f"INSTRUCTOR CLASH: Prof. {self.course_section.instructor.username} is already teaching on {self.get_day_of_week_display()} at this time.")
-            if self.course_section.batch == schedule.course_section.batch:
-                raise ValidationError(f"BATCH CLASH: {self.course_section.batch.name} already has a class scheduled at this time on {self.get_day_of_week_display()}.")
+            # 1. Venue Clash Verification (Now Case-Insensitive and Stripped)
+            conflict_room = schedule.room_number.strip().upper() if schedule.room_number else ""
+            if current_room == conflict_room:
+                # Passing a dictionary binds the error directly to the 'room_number' input field!
+                raise ValidationError({
+                    'room_number': f"VENUE CLASH: Room {current_room} is already booked for {schedule.course_section.course.code} from {schedule.start_time.strftime('%H:%M')} to {schedule.end_time.strftime('%H:%M')}."
+                })
+            
+            # 2. Instructor Clash Verification
+            if self.course_section.instructor and schedule.course_section.instructor:
+                if self.course_section.instructor == schedule.course_section.instructor:
+                    prof_name = self.course_section.instructor.username
+                    raise ValidationError({
+                        'course_section': f"INSTRUCTOR CLASH: Prof. {prof_name} is already teaching {schedule.course_section.course.code} at this time."
+                    })
+
+            # 3. Batch Clash Verification
+            try:
+                my_batches = set(self.course_section.batches.all())
+                their_batches = set(schedule.course_section.batches.all())
+                common_batches = my_batches.intersection(their_batches)
+                if common_batches:
+                    batch_names = ", ".join([b.name for b in common_batches])
+                    raise ValidationError({
+                        'course_section': f"BATCH CLASH: The following batches already have a class scheduled: {batch_names}."
+                    })
+            except ValueError:
+                pass
 
     def save(self, *args, **kwargs):
+        # Permanently save the sanitized room string to the database
+        if self.room_number:
+            self.room_number = self.room_number.strip().upper()
         self.clean()
         super().save(*args, **kwargs)
 
 class Enrollment(models.Model):
-    student = models.ForeignKey(StudentProfile, on_delete=models.CASCADE, related_name='enrollments')
+    student = models.ForeignKey(
+        StudentProfile, 
+        on_delete=models.CASCADE, 
+        related_name='enrollments',
+        # ADD THIS LINE: It reaches into the profile to check the underlying CustomUser's role
+        limit_choices_to={'user__role': 'STUDENT'} 
+    )
     course_section = models.ForeignKey(CourseSection, on_delete=models.CASCADE, related_name='enrolled_students')
     enrollment_date = models.DateField(auto_now_add=True)
     grade = models.CharField(max_length=2, blank=True, null=True)
@@ -89,7 +136,6 @@ class Enrollment(models.Model):
 
     def __str__(self):
         return f"{self.student.user.username} enrolled in {self.course_section.course.code}"
-
 class Attendance(models.Model):
     enrollment = models.ForeignKey(Enrollment, on_delete=models.CASCADE, related_name='attendance_records')
     date = models.DateField()
