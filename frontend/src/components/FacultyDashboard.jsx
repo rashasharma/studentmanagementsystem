@@ -11,7 +11,7 @@ export default function FacultyDashboard({ token }) {
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        const response = await axios.get('http://127.0.0.1:8000/api/academics/faculty/courses/', {
+        const response = await axios.get('https://studentmanagementsystem-mcd6.onrender.com/api/academics/faculty/courses/', {
           headers: { Authorization: `Bearer ${token}` }
         });
         setCourses(response.data);
@@ -25,7 +25,7 @@ export default function FacultyDashboard({ token }) {
   const viewRoster = async (courseId) => {
     setMessage('');
     try {
-      const response = await axios.get(`http://127.0.0.1:8000/api/academics/faculty/courses/${courseId}/roster/`, {
+      const response = await axios.get(`https://studentmanagementsystem-mcd6.onrender.com/api/academics/faculty/courses/${courseId}/roster/`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setRoster(response.data);
@@ -37,7 +37,7 @@ export default function FacultyDashboard({ token }) {
 
   const handleGradeUpdate = async (enrollmentId, newGrade) => {
     try {
-      await axios.patch(`http://127.0.0.1:8000/api/academics/faculty/enrollment/${enrollmentId}/grade/`, 
+      await axios.patch(`https://studentmanagementsystem-mcd6.onrender.com/api/academics/faculty/enrollment/${enrollmentId}/grade/`, 
         { grade: newGrade },
         { headers: { Authorization: `Bearer ${token}` } }
       );

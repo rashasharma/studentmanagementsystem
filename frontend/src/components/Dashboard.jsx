@@ -14,14 +14,14 @@ export default function Dashboard({ token }) {
     const fetchData = async () => {
       try {
         // 1. Fetch User Profile
-        const profileRes = await axios.get('http://127.0.0.1:8000/api/auth/me/', {
+        const profileRes = await axios.get('https://studentmanagementsystem-mcd6.onrender.com/api/auth/me/', {
           headers: { Authorization: `Bearer ${token}` }
         });
         setProfile(profileRes.data);
 
         // 2. Fetch REAL Enrollment Data to calculate stats
         if (profileRes.data.role === 'STUDENT') {
-          const enrollRes = await axios.get('http://127.0.0.1:8000/api/academics/enroll/', {
+          const enrollRes = await axios.get('https://studentmanagementsystem-mcd6.onrender.com/api/academics/enroll/', {
             headers: { Authorization: `Bearer ${token}` }
           });
           

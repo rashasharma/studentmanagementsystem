@@ -25,7 +25,7 @@ function App() {
 
   useEffect(() => {
     if (token) {
-      axios.get('http://127.0.0.1:8000/api/auth/me/', {
+      axios.get('https://studentmanagementsystem-mcd6.onrender.com/api/auth/me/', {
         headers: { Authorization: `Bearer ${token}` }
       })
       .then(response => {
@@ -47,7 +47,7 @@ function App() {
 
   const fetchNotifications = async () => {
     try {
-      const res = await axios.get('http://127.0.0.1:8000/api/academics/notifications/', {
+      const res = await axios.get('https://studentmanagementsystem-mcd6.onrender.com/api/academics/notifications/', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setNotifications(res.data);
@@ -58,7 +58,7 @@ function App() {
 
   const markAsRead = async (id) => {
     try {
-      await axios.post(`http://127.0.0.1:8000/api/academics/notifications/${id}/read/`, {}, {
+      await axios.post(`https://studentmanagementsystem-mcd6.onrender.com/api/academics/notifications/${id}/read/`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setNotifications(notifications.filter(n => n.id !== id));
@@ -120,7 +120,7 @@ function App() {
             {role === 'ADMIN' && (
               <>
                 <button onClick={() => setCurrentView('analytics')} className={getNavClass('analytics')}>⚙️ System Analytics</button>
-                <a href="http://127.0.0.1:8000/admin/" target="_blank" rel="noreferrer" className="nav-btn">
+                <a href="https://studentmanagementsystem-mcd6.onrender.com/admin/" target="_blank" rel="noreferrer" className="nav-btn">
                   🗄️ Raw Database ↗
                 </a>
               </>

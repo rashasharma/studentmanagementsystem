@@ -13,7 +13,7 @@ export default function CourseList({ token }) {
   const [prevPage, setPrevPage] = useState(null);
 
   // We wrap the fetch in a reusable function so we can pass it different page URLs
-  const fetchCourses = async (url = 'http://127.0.0.1:8000/api/academics/courses/') => {
+  const fetchCourses = async (url = 'https://studentmanagementsystem-mcd6.onrender.com/api/academics/courses/') => {
     try {
       const coursesRes = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` }
@@ -25,7 +25,7 @@ export default function CourseList({ token }) {
       setPrevPage(coursesRes.data.previous);
 
       // Fetch the student's enrollments to hide the "Enroll" button if they are already in it
-      const enrollRes = await axios.get('http://127.0.0.1:8000/api/academics/enroll/', {
+      const enrollRes = await axios.get('https://studentmanagementsystem-mcd6.onrender.com/api/academics/enroll/', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setMyEnrollments(enrollRes.data.map(enrollment => enrollment.course)); 
@@ -43,7 +43,7 @@ export default function CourseList({ token }) {
     setMessage('');
     setError('');
     try {
-      await axios.post('http://127.0.0.1:8000/api/academics/enroll/', 
+      await axios.post('https://studentmanagementsystem-mcd6.onrender.com/api/academics/enroll/', 
         { course: courseId },
         { headers: { Authorization: `Bearer ${token}` } }
       );

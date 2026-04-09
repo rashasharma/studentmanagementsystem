@@ -10,7 +10,7 @@ export default function Transcript({ token }) {
   useEffect(() => {
     const fetchTranscript = async () => {
       try {
-        const response = await axios.get('http://127.0.0.1:8000/api/academics/enroll/', {
+        const response = await axios.get('https://studentmanagementsystem-mcd6.onrender.com/api/academics/enroll/', {
           headers: { Authorization: `Bearer ${token}` }
         });
         setEnrollments(response.data);
@@ -27,7 +27,7 @@ export default function Transcript({ token }) {
   const handleDownloadPDF = async () => {
     setDownloading(true);
     try {
-      const response = await axios.get('http://127.0.0.1:8000/api/academics/transcript/download/', {
+      const response = await axios.get('https://studentmanagementsystem-mcd6.onrender.com/api/academics/transcript/download/', {
         headers: { Authorization: `Bearer ${token}` },
         responseType: 'blob', // CRITICAL: Tells Axios we are expecting a file, not JSON!
       });

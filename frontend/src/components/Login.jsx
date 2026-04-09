@@ -13,14 +13,14 @@ export default function Login({ setToken }) {
     setError('');
     setIsLoading(true);
     try {
-      const response = await axios.post('http://127.0.0.1:8000/api/auth/login/', {
+      const response = await axios.post('https://studentmanagementsystem-mcd6.onrender.com/api/auth/login/', {
         username,
         password
       });
       
       const token = response.data.access;
       
-      const meResponse = await axios.get('http://127.0.0.1:8000/api/auth/me/', {
+      const meResponse = await axios.get('https://studentmanagementsystem-mcd6.onrender.com/api/auth/me/', {
         headers: { Authorization: `Bearer ${token}` }
       });
 

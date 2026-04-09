@@ -14,7 +14,7 @@ export default function AttendanceSheet({ token }) {
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        const response = await axios.get('http://127.0.0.1:8000/api/academics/faculty/courses/', {
+        const response = await axios.get('https://studentmanagementsystem-mcd6.onrender.com/api/academics/faculty/courses/', {
           headers: { Authorization: `Bearer ${token}` }
         });
         setCourses(response.data);
@@ -40,7 +40,7 @@ export default function AttendanceSheet({ token }) {
         setLoading(true);
         setMessage('');
         try {
-          const response = await axios.get(`http://127.0.0.1:8000/api/academics/faculty/courses/${selectedCourse}/attendance/${date}/`, {
+          const response = await axios.get(`https://studentmanagementsystem-mcd6.onrender.com/api/academics/faculty/courses/${selectedCourse}/attendance/${date}/`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           setAttendanceData(response.data);
@@ -66,7 +66,7 @@ export default function AttendanceSheet({ token }) {
   const handleSave = async () => {
     setMessage('');
     try {
-      await axios.put(`http://127.0.0.1:8000/api/academics/faculty/courses/${selectedCourse}/attendance/${date}/`, 
+      await axios.put(`https://studentmanagementsystem-mcd6.onrender.com/api/academics/faculty/courses/${selectedCourse}/attendance/${date}/`, 
         attendanceData,
         { headers: { Authorization: `Bearer ${token}` } }
       );

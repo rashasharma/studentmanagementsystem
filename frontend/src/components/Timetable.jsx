@@ -12,7 +12,7 @@ export default function Timetable({ token }) {
   useEffect(() => {
     const fetchSchedule = async () => {
       try {
-        const response = await axios.get('http://127.0.0.1:8000/api/academics/enroll/', {
+        const response = await axios.get('https://studentmanagementsystem-mcd6.onrender.com/api/academics/enroll/', {
           headers: { Authorization: `Bearer ${token}` }
         });
         setSchedule(response.data);

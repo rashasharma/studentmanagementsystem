@@ -9,7 +9,7 @@ export default function AnalyticsDashboard({ token }) {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await axios.get('http://127.0.0.1:8000/api/academics/analytics/', {
+        const response = await axios.get('https://studentmanagementsystem-mcd6.onrender.com/api/academics/analytics/', {
           headers: { Authorization: `Bearer ${token}` }
         });
         setStats(response.data);
